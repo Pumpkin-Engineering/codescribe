@@ -12,6 +12,26 @@ from object_type import get_object_type
 EXPORT_STAGING_SUFFIX = ".codescribe_staging"
 EXPORT_BACKUP_SUFFIX = ".codescribe_backup"
 
+# Line ending written into every text file CODESCRIBE exports. CODESYS itself
+# emits CRLF and the reference exports are pinned to CRLF, so that stays the
+# default and out-of-the-box behaviour is unchanged. Call set_line_ending("\n")
+# before an export to produce LF instead (native xml included). Reads are
+# unaffected: open_utf8 always reads with universal newlines, so imports stay
+# line-ending agnostic whichever way the files were written.
+CRLF = "\r\n"
+CR = "\r"
+LF = "\n"
+_LINE_ENDING = CRLF
+
+
+def set_line_ending(ending):
+    global _LINE_ENDING
+    _LINE_ENDING = ending
+
+
+def get_line_ending():
+    return _LINE_ENDING
+
 
 class ExportFolderLockedError(EnvironmentError):
     """The target export folder could not be replaced. The completed export is
@@ -152,7 +172,10 @@ def open_utf8(path, mode):
     # ScriptEngine runs on Python 2.7; the builtin open() writes a byte stream and would
     # implicitly encode unicode text as ascii, crashing on Cyrillic / accented chars / smart
     # punctuation. io.open with an explicit encoding keeps everything UTF-8 round-trippable.
-    return io.open(path, mode, encoding="utf-8")
+    # Writing honours the configured line ending; reading always uses universal newlines
+    # (newline=None) so a file is imported correctly whatever endings it was written with.
+    newline = _LINE_ENDING if ("w" in mode or "a" in mode) else None
+    return io.open(path, mode, encoding="utf-8", newline=newline)
 
 
 def print_python_version():

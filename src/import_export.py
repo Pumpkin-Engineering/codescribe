@@ -70,6 +70,11 @@ def write_native(obj, path, recursive=False):
             flags=re.MULTILINE,
         )
 
+        # CODESYS writes native xml with CRLF; honour the configured line ending
+        # the same way open_utf8 does for text, so an LF export is uniformly LF.
+        if get_line_ending() == LF:
+            timestamp_replaced = timestamp_replaced.replace(CRLF, LF).replace(CR, LF)
+
         f.seek(0)
         f.write(timestamp_replaced)
         f.truncate()
