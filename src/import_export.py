@@ -444,18 +444,43 @@ OBJECT_TYPE_TO_EXPORT_FUNCTION = {
 
 
 def remove_tracked_objects(obj_list):
-    for obj in obj_list:
-        if get_object_type(obj) in OBJECT_TYPE_TO_EXPORT_FUNCTION:
+    pending = list(obj_list)
+    while pending:
+        still_failing = []
+        removed_count = 0
+
+        for obj in pending:
             try:
-                print("Removing " + obj.get_name())
+                if get_object_type(obj) not in OBJECT_TYPE_TO_EXPORT_FUNCTION:
+                    continue
+                name = obj.get_name()
+            except StandardError:
+                # Removing a parent object can invalidate handles for sibling objects
+                # still held in the caller's list. Treat those as already gone.
+                continue
+
+            try:
                 obj.remove()
+                print("Removing " + name)
+                removed_count += 1
             except StandardError as remove_error:
-                # Implicitly generated objects (e.g. functions generated from the project
-                # information) cannot be removed; leave them in place.
+                # Referenced objects (commonly DUTs/GVLs) can fail until the POUs that
+                # use them have been removed. Keep them for another pass; only warn if
+                # the remaining objects make no progress at all.
+                still_failing.append((obj, name, remove_error))
+
+        if not still_failing:
+            return
+
+        if removed_count == 0:
+            for _, name, remove_error in still_failing:
                 print(
                     "Warning: could not remove '"
-                    + obj.get_name()
+                    + name
                     + "' ("
                     + str(remove_error)
                     + "); leaving it in place"
                 )
+            return
+
+        pending = [obj for obj, _, _ in still_failing]
