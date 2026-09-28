@@ -7,25 +7,9 @@ import scriptengine  # type: ignore
 
 from entrypoint import get_lib_src_folder
 import graphical_export
-from import_export import OBJECT_TYPE_TO_EXPORT_FUNCTION, SERVICE_EXPORT_FUNCTIONS, write_native
+from import_export import LIB_SKIP_NAMES, OBJECT_TYPE_TO_EXPORT_FUNCTION, SERVICE_EXPORT_FUNCTIONS, write_native
 from object_type import ObjectType, get_object_type
 from util import *
-
-# Service objects that are not source. The manager objects carry GUIDs that are not in
-# GUID_TYPE_MAPPING, so without this list the UNKNOWN fallback below would export them
-# as native xml noise.
-SKIP_NAMES = [
-    "Library Manager",
-    "Project Information",
-    "Library Information",
-    "Project Settings",
-    "Task Configuration",
-    "Symbol Configuration",
-    "Visualization Manager",
-    "Alarm Configuration",
-    "Recipe Manager",
-    "__VisualizationStyle",  # auto-created in every project; native export of it fails
-]
 
 
 def export_child(child_obj, parent_obj, parent_folder_path):
@@ -39,7 +23,7 @@ def export_child(child_obj, parent_obj, parent_folder_path):
 
     # Read-only informational exports (library list, visualisation manager).
     # In library projects these managers usually carry unmapped GUIDs and are
-    # filtered by SKIP_NAMES above instead; the branch is here for consistency
+    # filtered by LIB_SKIP_NAMES instead; the branch is here for consistency
     # with script_export_to_files.py.
     service_fn = SERVICE_EXPORT_FUNCTIONS.get(child_obj_type)
     if service_fn is not None:
@@ -88,7 +72,7 @@ try:
     staging_folder = begin_export_folder(src_folder)
 
     for child_obj in scriptengine.projects.primary.get_children():
-        if child_obj.get_name() in SKIP_NAMES:
+        if child_obj.get_name() in LIB_SKIP_NAMES:
             continue
 
         child_obj_type = get_object_type(child_obj)

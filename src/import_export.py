@@ -443,6 +443,23 @@ OBJECT_TYPE_TO_EXPORT_FUNCTION = {
 }
 
 
+# Service objects that are not source. The library manager objects carry GUIDs
+# that are not in GUID_TYPE_MAPPING, so without this list the UNKNOWN fallback
+# would export them as native xml noise.
+LIB_SKIP_NAMES = [
+    "Library Manager",
+    "Project Information",
+    "Library Information",
+    "Project Settings",
+    "Task Configuration",
+    "Symbol Configuration",
+    "Visualization Manager",
+    "Alarm Configuration",
+    "Recipe Manager",
+    "__VisualizationStyle",  # auto-created in every project; native export of it fails
+]
+
+
 def remove_tracked_objects(obj_list):
     pending = list(obj_list)
     while pending:
