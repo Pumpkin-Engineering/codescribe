@@ -8,8 +8,15 @@ import scriptengine  # type: ignore
 
 from communication_import_export import remove_tracked_communication_devices
 from device_tree_import_export import remove_tracked_device_tree_devices
-from entrypoint import find_application, find_communication, get_device_entrypoints, get_src_folder
+from entrypoint import (
+    find_application,
+    find_communication,
+    get_device_entrypoints,
+    get_src_folder,
+    is_library_project,
+)
 from import_export import *
+from import_from_files import remove_tracked_project_objects
 from project_template import find_template_paths_and_versions, generate_template_path
 from util import *
 
@@ -47,18 +54,26 @@ try:
 
     template_project = scriptengine.projects.get_by_path(new_template_path)
 
-    for device_obj in get_device_entrypoints(template_project):
-        application = find_application(device_obj)
-        remove_tracked_objects(application.get_children())
-        communication = find_communication(device_obj)
-        if communication is not None:
-            remove_tracked_communication_devices(communication)
+    if not is_library_project(template_project):
+        for device_obj in get_device_entrypoints(template_project):
+            application = find_application(device_obj)
+            remove_tracked_objects(list(application.get_children()))
+            communication = find_communication(device_obj)
+            if communication is not None:
+                remove_tracked_communication_devices(communication)
 
-        # The list of tracked devices lives in the primary project's export folder.
-        # The template copy has its own file name, so its src folder never exists
-        # on disk and would make this a no-op.
-        device_folder = os.path.join(get_src_folder(scriptengine.projects.primary), device_obj.get_name())
-        remove_tracked_device_tree_devices(device_obj, device_folder)
+            # The list of tracked devices lives in the primary project's export folder.
+            # The template copy has its own file name, so its src folder never exists
+            # on disk and would make this a no-op.
+            device_folder = os.path.join(get_src_folder(scriptengine.projects.primary), device_obj.get_name())
+            remove_tracked_device_tree_devices(device_obj, device_folder)
+
+    # Strip tracked source objects directly under the project root for both project
+    # kinds. A library project keeps its source there; a device project can also keep
+    # library POUs there, not under any device Application. Strip after the
+    # device/application objects so CODESYS does not refuse to remove types still
+    # referenced by application code.
+    remove_tracked_project_objects(template_project)
 
     template_project.save()
 

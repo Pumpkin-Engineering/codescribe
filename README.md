@@ -132,6 +132,8 @@ A template file can be generated from an existing project file by using the `Sav
 
 To generate a project from a template file, you need two things: the `<project_name>_template_v<X>.project` file and a folder named `<project_name>` with the files exported by the `Export To Files` script. To generate a project, copy the template project in the same location and rename it to `<project_name>.project`. Open the copy with CODESYS and use the `Import From Files` button to import the project files.
 
+`Save As Template` and `Update From Template` also handle library/source objects kept directly under the project root. A library project keeps all of its objects there rather than under a Device, so `Save As Template` strips those objects (leaving the manager objects in the template) and `Update From Template` reads them back from the `<project_name>.POUs` folder written by `Export Lib To Files`. Device projects can also keep library/source objects directly under the project root; `Save As Template` strips those as well, and `Update From Template` reads them back when that folder exists. The two project kinds are detected automatically; a project with a Device is treated as a device project and anything else as a library project.
+
 ## Exporting and Importing Communication Devices
 
 Exporting communication devices has been hardcoded to create folders for top-level devices under `Communication`. Any devices under these top-level devices will be exported using native CODESYS xml. This is done because the top-level devices can not be removed from the CODESYS project.

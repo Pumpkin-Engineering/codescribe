@@ -106,15 +106,21 @@ def import_from_files(project):
         import_device_tree_siblings(device_obj, device_folder)
 
 
+def remove_tracked_project_objects(project):
+    # Remove tracked source objects directly under the project root. Service/manager
+    # objects are skipped by name or left in place because they are not in
+    # OBJECT_TYPE_TO_EXPORT_FUNCTION. This strips library projects, and device projects
+    # that keep library/source objects directly under the project root.
+    tracked_children = [obj for obj in project.get_children() if obj.get_name() not in SKIP_NAMES]
+    remove_tracked_objects(tracked_children)
+
+
 def import_lib_from_files(project):
     pous_folder = get_lib_src_folder(project)
     print("Reading from: " + pous_folder)
     assert_path_exists(pous_folder)
 
-    # Service/manager objects are not in OBJECT_TYPE_TO_EXPORT_FUNCTION, so they are
-    # left in place here (they are ignored by the lib export too).
-    tracked_children = [obj for obj in project.get_children() if obj.get_name() not in SKIP_NAMES]
-    remove_tracked_objects(tracked_children)
+    remove_tracked_project_objects(project)
 
     for child in sorted(os.listdir(pous_folder), key=lambda x: x.count(".")):
         if os.path.splitext(child)[0] not in SKIP_NAMES:

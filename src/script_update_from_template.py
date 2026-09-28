@@ -6,7 +6,8 @@ import shutil
 
 import scriptengine  # type: ignore
 
-from import_from_files import import_from_files
+from entrypoint import get_lib_src_folder, is_library_project
+from import_from_files import import_from_files, import_lib_from_files
 from project_template import find_template_paths_and_versions
 from util import *
 
@@ -41,7 +42,19 @@ try:
         shutil.copyfile(newest_template_path, project_path)
         scriptengine.projects.open(project_path)
 
-        import_from_files(scriptengine.projects.primary)
+        project = scriptengine.projects.primary
+        has_lib_source_folder = os.path.isdir(get_lib_src_folder(project))
+
+        if is_library_project(project):
+            import_lib_from_files(project)
+        else:
+            import_from_files(project)
+
+            # Device projects can also carry library/source objects directly under the
+            # project root. Save As Template strips those when the matching
+            # `Export Lib To Files` folder exists, so import them back too.
+            if has_lib_source_folder:
+                import_lib_from_files(project)
 
         scriptengine.projects.primary.save()
         ui_info("Update From Template complete.")

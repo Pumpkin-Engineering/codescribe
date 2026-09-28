@@ -18,6 +18,16 @@ def get_lib_src_folder(project):
     return os.path.join(working_dir, "{}.POUs".format(project_name))
 
 
+def is_library_project(project):
+    # A library project keeps its objects directly under the project root; a device
+    # project keeps them under a Device. The two exports and their templates differ,
+    # so callers pick the right strip/import path with this.
+    for child in project.get_children():
+        if get_object_type(child) == ObjectType.DEVICE:
+            return False
+    return True
+
+
 def get_device_entrypoints(project):
     children = project.get_children()
     for child in children:
